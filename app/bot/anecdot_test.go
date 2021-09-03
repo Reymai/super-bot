@@ -16,8 +16,9 @@ import (
 )
 
 func TestAnecdot_Help(t *testing.T) {
-	require.Equal(t, "анекдот!, анкедот!, joke!, chuck!, facts!, zaibatsu!, excuse! _– расскажет анекдот или шутку_\n",
-		Anecdote{}.Help())
+	a := NewAnecdote(http.DefaultClient)
+	require.Equal(t, "анекдот!, анкедот!, joke!, chuck!, /oneliner, oneliner!, /facts, facts!, /pirozhki, pirozhki!, /excuse_en, excuse_en!, /zaibatsu, zaibatsu!, /excuse, excuse! _– расскажет анекдот или шутку_\n",
+		a.Help())
 }
 
 func TestAnecdot_ReactsOnJokeRequest(t *testing.T) {
@@ -25,12 +26,12 @@ func TestAnecdot_ReactsOnJokeRequest(t *testing.T) {
 	b := NewAnecdote(mockHTTP)
 
 	mockHTTP.On("Do", mock.Anything).Return(&http.Response{
-		Body: ioutil.NopCloser(strings.NewReader(`{"content": "Добраться до вершины не так сложно, как пробраться через толпу у её основания.."}`)),
+		Body: ioutil.NopCloser(strings.NewReader(`{"content": "Добраться до вершины не так сложно, как пробраться через толпу у её основания."}`)),
 	}, nil)
 
 	response := b.OnMessage(Message{Text: "joke!"})
 	require.True(t, response.Send)
-	require.Equal(t, "Добраться до вершины не так сложно, как пробраться через толпу у её основания..", response.Text)
+	require.Equal(t, "Добраться до вершины не так сложно, как пробраться через толпу у её основания", response.Text)
 }
 
 func TestAnecdot_ujokesrvRetursnNothingOnUnableToDoReq(t *testing.T) {
@@ -47,6 +48,8 @@ func TestAnecdot_ujokesrvRetursnNothingOnUnableToDoReq(t *testing.T) {
 func TestAnecdotReactsOnUnexpectedMessage(t *testing.T) {
 	mockHTTP := &mocks.HTTPClient{}
 	b := NewAnecdote(mockHTTP)
+
+	mockHTTP.On("Do", mock.Anything).Return(nil, errors.New("err"))
 
 	result := b.OnMessage(Message{Text: "unexpected msg"})
 	require.False(t, result.Send)
